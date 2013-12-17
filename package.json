@@ -1,0 +1,21 @@
+{
+  "name": "rhom",
+  "version": "0.0.0",
+  "description": "Redis Hash-Object Mapper mixin",
+  "author": "Jonathan Anderson <janderson@janderson.ca>",
+  "homepage": "https://github.com/jdpanderson/rhom",
+  "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rhom/rhom.git"
+  },
+  "keywords": ["redis", "odm", "mixin"],
+  "licenses": ["MIT"],
+  "dependencies": {
+    "redis": ">=0.9",
+    "uuid": ">=1.4"
+  },
+  "devDependencies": {
+    "jasmine-node": ">=1.11.0"
+  }
+}
