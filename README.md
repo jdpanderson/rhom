@@ -50,3 +50,18 @@ rhom(MyUserModel, ['id', 'name', 'email'], client);
 // Simply add this line:
 rhom.cache(MyUserModel, 60); // 60 second cache, or leave out for infinite cache.
 ```
+
+Caveats
+-------
+
+Classes must be defined using a named function definition, not an anonymous function assigned to a variable. The named function makes the .name property available, on which some functions rely.
+
+```javascript
+// Do this:
+function MyClass() { /* ... */ }
+MyClass.prototype = { /* ... */ }
+
+// Not this:
+var MyClass = function() { /* ... */ }
+MyClass.prototype = { /* ... */ }
+```
