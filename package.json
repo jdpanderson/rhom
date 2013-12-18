@@ -13,7 +13,8 @@
   "licenses": ["MIT"],
   "dependencies": {
     "redis": ">=0.9",
-    "uuid": ">=1.4"
+    "uuid": ">=1.4",
+	"inflection": ">=1.3.2"
   },
   "devDependencies": {
     "jasmine-node": ">=1.11.0",
