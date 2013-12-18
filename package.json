@@ -18,5 +18,8 @@
   "devDependencies": {
     "jasmine-node": ">=1.11.0",
     "fakeredis": "*"
+  },
+  "scripts": {
+      "test": "./node_modules/.bin/jasmine-node spec"
   }
 }
