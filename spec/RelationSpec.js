@@ -28,8 +28,9 @@ Relation(Role).toOne(Setting);
 Relation(User).via(Role).toOne(Setting);
 Relation(User).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
 Relation(User).via(Role).toMany(Permission);
+Relation(Setting).toOne(Default);
 
-var saved = 0, user, role, setting, perm1, perm2;
+var saved = 0, user, role, setting, dflt, perm1, perm2;
 function countResults(err, res) { if (!err) saved++; };
 
 function setup() {
@@ -52,10 +53,14 @@ function setup() {
 	perm2 = new Permission();
 	perm2.desc = "baz1";
 	perm2.save(countResults);
+
+	dflt = new Default();
+	dflt.dflt = "exhausting";
+	dflt.save(countResults);
 };
 
 function setupDone() {
-	if (saved == 5) {
+	if (saved == 6) {
 		saved = 0;
 		return true;
 	}
@@ -63,13 +68,15 @@ function setupDone() {
 }
 
 function additionalSetup() {
+	user.setRole(role, countResults);
+	role.setSetting(setting, countResults);
 	role.addPermission(perm1, countResults);
 	role.addPermission(perm2, countResults);
-	role.setSetting(setting, countResults);
+	setting.setDefault(dflt, countResults);
 }
 
 function additionalSetupDone() {
-	if (saved == 3) {
+	if (saved == 5) {
 		saved = 0;
 		return true;
 	}
@@ -218,6 +225,36 @@ describe("Indirect model relationships", function(done) {
 	runs(additionalSetup);
 	waitsFor(additionalSetupDone, 500, "Additional relationships created.");
 
+	it("Fetches indirect relations", function(done) {
+		user.getSetting(function(err, res) {
+			expect(err).toBe(null);
+			expect(res instanceof Setting).toBe(true);
+			expect(res.pref).toBe(setting.pref);
+			expect(res.id).toBe(setting.id);
+			done();
+		});
+	});
+
+	it("Fetches multiple levels of indirect relations", function(done) {
+		user.getDefault(function(err, res) {
+			expect(err).toBe(null);
+			expect(res instanceof Default).toBe(true);
+			expect(res.dflt).toBe(dflt.dflt);
+			expect(res.id).toBe(dflt.id);
+			done();
+		});
+	});
+
+	it("Fetches one-to-many relationships", function(done) {
+		user.getPermissions(function(err, res) {
+			expect(err).toBe(null);
+			expect(res instanceof Array).toBe(true);
+			expect(res.length).toBe(2);
+			expect(res[0].id === perm1.id || res[0].id === perm2.id).toBe(true);
+			expect(res[1].id === perm1.id || res[1].id === perm2.id).toBe(true);
+			done();
+		});
+	});
 
 	runs(cleanup);
 	waitsFor(cleanupDone, 500, "Test objects to be cleaned up.");
