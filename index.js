@@ -7,6 +7,6 @@ module.exports.cache = require('./lib/Cache.js');
 /* Relations mixin adds object relationships. */
 module.exports.relates = require('./lib/Relation.js');
 
-// ... Future? Other ideas?
+// Placeholder for future ideas. See bottom of README.md for info.
 //module.exports.eventemitter = require('./EventEmitter.js');
 //module.exports.index = require('./Index.js');
