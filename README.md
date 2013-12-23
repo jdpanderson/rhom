@@ -134,3 +134,4 @@ Possible Additions
 
 Some things I've thought about adding:
  * Local storage with event or pubsub based change tracking. This would be useful for multi-process node classes. (Something like keeping local copies that are automatically updated when changed in redis.)
+ * Indexing, either local or using redis features.
