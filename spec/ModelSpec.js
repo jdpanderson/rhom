@@ -116,6 +116,38 @@ describe("Model class", function(done) {
 		});
 	});
 
+	it("Can retrieve several objects at once", function() {
+		var saved = 0, result, ids = [];
+		runs(function() {
+			for (var i = 0; i < 5; i++) {
+				var mdl = new TestModel();
+				mdl.save(function() { saved++; });
+				ids.push(mdl.id);
+			}
+		});
+
+		waitsFor(function() {
+			return saved == 5;
+		}, "All objects to be saved");
+
+		runs(function() {
+			TestModel.get(ids, function(err, res) {
+				result = res;
+			});
+		});
+
+		waitsFor(function() {
+			return result !== undefined;
+		}, "Objects to be returned", 500);
+
+		runs(function() {
+			expect(result.length).toBe(saved);
+			for (var i = 0; i < ids.length; i++) {
+				expect(result[i].id).toBe(ids[i]);
+			}
+		});
+	});
+
 	it("Can enumerate keys", function() {
 		var saved = 0, keys;
 		runs(function() {
