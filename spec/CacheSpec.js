@@ -92,4 +92,47 @@ describe("Cached Model class", function(done) {
 			});
 		});
 	});
+
+	/**
+	 * Save two objects, get them to make sure they're cached, then delete to make sure they're actually coming from cache.
+	 */
+	it("Can retrieve multiple cached entries", function(done) {
+		var test1 = new TestModel();
+		test1.foo = "first";
+		test1.save(function(err, result) {
+			if (err) done(err);
+
+			var test2 = new TestModel();
+			test2.foo = "second";
+			test2.save(function(err, result) {
+				if (err) done(err);
+
+				TestModel.get(test1.id, function(err, result) {
+					if (err) done(err);
+
+					expect(result.foo).toBe(test1.foo);
+
+					TestModel.get([test1.id, test2.id], function(err, result) {
+						if (err) done(err);
+
+						expect(result[0].foo).toBe(test1.foo);
+						expect(result[1].foo).toBe(test2.foo);
+
+						client.del(TestModel.getKey(test1.id), function(err, result) {
+							if (err) done(err);
+
+							TestModel.get([test1.id, test2.id], function(err, result) {
+								if (err) done(err);
+
+								expect(result[0].foo).toBe(test1.foo);
+								expect(result[1].foo).toBe(test2.foo);
+
+								done();
+							});
+						});
+					});
+				});
+			});
+		});
+	});
 });
