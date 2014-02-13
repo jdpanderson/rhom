@@ -1,3 +1,5 @@
+var async = require('async');
+var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var Model = require('../lib/Model.js');
 var Relation = require('../lib/Relation.js');
@@ -30,149 +32,149 @@ Relation(User).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step d
 Relation(User).via(Role).toMany(Permission);
 Relation(Setting).toOne(Default);
 
-var saved = 0, user, role, setting, dflt, perm1, perm2;
-function countResults(err, res) { if (!err) saved++; };
+var user, role, setting, dflt, perm1, perm2;
 
-function setup() {
+function setup(done) {
   user = new User();
   user.name = "foo";
-  user.save(countResults);
 
   role = new Role();
   role.label = "bar";
-  role.save(countResults);
 
   setting = new Setting();
   setting.pref = "blah";
-  setting.save(countResults);
 
   perm1 = new Permission();
   perm1.desc = "baz1";
-  perm1.save(countResults);
 
   perm2 = new Permission();
   perm2.desc = "baz1";
-  perm2.save(countResults);
 
   dflt = new Default();
   dflt.dflt = "exhausting";
-  dflt.save(countResults);
+  
+  async.parallel(
+    [
+      function(cb) { user.save(cb); },
+      function(cb) { role.save(cb); },
+      function(cb) { setting.save(cb); },
+      function(cb) { perm1.save(cb); },
+      function(cb) { perm2.save(cb); },
+      function(cb) { dflt.save(cb); }
+    ],
+    function(err, results) {
+      err ? done(err) : done();
+    }
+  );
 };
 
-function setupDone() {
-  if (saved == 6) {
-    saved = 0;
-    return true;
-  }
-  return false;
+function additionalSetup(done) {
+  async.parallel(
+    [
+      function(cb) { user.setRole(role, cb); },
+      function(cb) { role.setSetting(setting, cb); },
+      function(cb) { role.addPermission(perm1, cb); },
+      function(cb) { role.addPermission(perm2, cb); },
+      function(cb) { setting.setDefault(dflt, cb); }
+    ],
+    function(err, results) {
+      err ? done(err) : done();
+    }
+  );
 }
 
-function additionalSetup() {
-  user.setRole(role, countResults);
-  role.setSetting(setting, countResults);
-  role.addPermission(perm1, countResults);
-  role.addPermission(perm2, countResults);
-  setting.setDefault(dflt, countResults);
-}
-
-function additionalSetupDone() {
-  if (saved == 5) {
-    saved = 0;
-    return true;
-  }
-  return false;
-}
-
-function cleanup() {
-  User.purge(countResults);
-  Role.purge(countResults);
-  Permission.purge(countResults);
-}
-
-function cleanupDone() {
-  if (saved == 3) {
-    saved = 0;
-    return true;
-  }
-  return false;
+function cleanup(done) {
+  async.parallel(
+    [
+      function(cb) { User.purge(cb); },
+      function(cb) { Role.purge(cb); },
+      function(cb) { Permission.purge(cb); }
+    ],
+    function(err, results) {
+      err? done(err) : done();
+    }
+  );
 }
 
 describe("One to one model relationships", function(done) {
   /* Set up a basic set of objects with which to test. */
-  runs(setup);
-  waitsFor(setupDone, 500, "Test objects to be saved.");
+  before(function(done) {
+    setup(done);
+  });
   
   it("Return null when no related object is set", function(done) {
     user.getRole(function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(null);
+      should(err).be.exactly(null);
+      should(res).be.exactly(null);
       done();
     });
   });
 
   it("Setter saves a related object", function(done) {
     user.setRole(role, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       done();
     });
   });
 
   it("Getter retrieves a related object", function(done) {
     user.getRole(function(err, res) {
-      expect(err).toBe(null);
-      expect(res.id).toBe(role.id);
+      should(err).be.exactly(null);
+      res.id.should.be.equal(role.id);
       done();
     });
   });
 
   it("Setter can remove relations with a null value", function(done) {
     user.setRole(null, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       user.getRole(function(err, res) {
-        expect(err).toBe(null);
-        expect(res).toBe(null);
+        should(err).be.exactly(null);
+        should(res).be.exactly(null);
         done();
       });
     });
   });
 
-  runs(cleanup);
-  waitsFor(cleanupDone, 500, "Test objects to be cleaned up.");
+  after(function(done) {
+    cleanup(done);
+  });
 });
 
 describe("One to many model relationships", function(done) {
-  runs(setup);
-  waitsFor(setupDone, 500, "Test objects to be saved");
+  before(function(done) {
+    setup(done);
+  });
 
   it("Returns an empty array when no relationships are set", function(done) {
     role.getPermissions(function(err, res) {
-      expect(err).toBe(null);
-      expect(res instanceof Array).toBe(true);
+      should(err).be.exactly(null);
+      should(res instanceof Array).be.true;
       done();
     });
   });
 
   it("Adds multiple related objects", function(done) {
     role.addPermission(perm1, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       role.getPermissions(function(err, res) {
-        expect(err).toBe(null);
-        expect(res instanceof Array).toBe(true);
-        expect(res.length).toBe(1);
-        expect(res[0].id).toBe(perm1.id);
+        should(err).be.exactly(null);
+        should(res instanceof Array).be.true;
+        res.length.should.be.exactly(1);
+        res[0].id.should.be.exactly(perm1.id);
         role.addPermission(perm2, function(err, res) {
-          expect(err).toBe(null);
-          expect(res).toBe(true);
+          should(err).be.exactly(null);
+          res.should.be.true;
           role.getPermissions(function(err, res) {
-            expect(err).toBe(null);
-            expect(res instanceof Array).toBe(true);
-            expect(res.length).toBe(2);
-            expect(res[0].id === perm1.id || res[0].id === perm2.id).toBe(true);
-            expect(res[1].id === perm1.id || res[1].id === perm2.id).toBe(true);
-            expect(res[0].id !== res[1].id).toBe(true);
+            should(err).be.exactly(null);
+            should(res instanceof Array).be.true;
+            res.length.should.be.exactly(2);
+            should(res[0].id === perm1.id || res[0].id === perm2.id).be.true;
+            should(res[1].id === perm1.id || res[1].id === perm2.id).be.true;
+            should(res[0].id !== res[1].id).be.true;
             done();
           });
         });
@@ -182,13 +184,13 @@ describe("One to many model relationships", function(done) {
 
   it("Removes related objects", function(done) {
     role.removePermission(perm2, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       role.getPermissions(function(err, res) {
-        expect(err).toBe(null);
-        expect(res instanceof Array).toBe(true);
-        expect(res.length).toBe(1);
-        expect(res[0].id).toBe(perm1.id);
+        should(err).be.exactly(null);
+        should(res instanceof Array).be.true;
+        res.length.should.be.exactly(1);
+        res[0].id.should.be.exactly(perm1.id);
         done();
       });
     });
@@ -196,66 +198,70 @@ describe("One to many model relationships", function(done) {
 
   it("Doesn't care if you try to remove a relation twice", function(done) {
     role.removePermission(perm2, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       done();
     });
   });
 
   it("Removes related objects by id", function(done) {
     role.removePermission(perm1.id, function(err, res) {
-      expect(err).toBe(null);
-      expect(res).toBe(true);
+      should(err).be.exactly(null);
+      res.should.be.true;
       role.getPermissions(function(err, res) {
-        expect(err).toBe(null);
-        expect(res instanceof Array).toBe(true);
-        expect(res.length).toBe(0);
+        should(err).be.exactly(null);
+        should(res instanceof Array).be.true;
+        res.length.should.be.exactly(0);
         done();
       });
     });
   });
 
-  runs(cleanup);
-  waitsFor(cleanupDone, 500, "Test objects to be cleaned up");
+  after(function(done) {
+    cleanup(done);
+  });
 });
 
 describe("Indirect model relationships", function(done) {
-  runs(setup);
-  waitsFor(setupDone, 500, "Test objects to be saved.");
-  runs(additionalSetup);
-  waitsFor(additionalSetupDone, 500, "Additional relationships created.");
+  before(function(done) {
+    setup(done);
+  });
+  before(function(done) {
+    additionalSetup(done);
+  });
 
   it("Fetches indirect relations", function(done) {
     user.getSetting(function(err, res) {
-      expect(err).toBe(null);
-      expect(res instanceof Setting).toBe(true);
-      expect(res.pref).toBe(setting.pref);
-      expect(res.id).toBe(setting.id);
+      should(err).be.exactly(null);
+      should(res instanceof Setting).be.true;
+      res.pref.should.be.exactly(setting.pref);
+      res.id.should.be.exactly(setting.id);
       done();
     });
   });
 
   it("Fetches multiple levels of indirect relations", function(done) {
     user.getDefault(function(err, res) {
-      expect(err).toBe(null);
-      expect(res instanceof Default).toBe(true);
-      expect(res.dflt).toBe(dflt.dflt);
-      expect(res.id).toBe(dflt.id);
+      should(err).be.exactly(null);
+      should(res instanceof Default).be.true;
+      res.dflt.should.be.exactly(dflt.dflt);
+      res.id.should.be.exactly(dflt.id);
       done();
     });
   });
 
   it("Fetches one-to-many relationships", function(done) {
     user.getPermissions(function(err, res) {
-      expect(err).toBe(null);
-      expect(res instanceof Array).toBe(true);
-      expect(res.length).toBe(2);
-      expect(res[0].id === perm1.id || res[0].id === perm2.id).toBe(true);
-      expect(res[1].id === perm1.id || res[1].id === perm2.id).toBe(true);
+      should(err).be.exactly(null);
+      should(res instanceof Array).be.true;
+      res.length.should.be.exactly(2);
+      should(res[0].id === perm1.id || res[0].id === perm2.id).be.true;
+      should(res[1].id === perm1.id || res[1].id === perm2.id).be.true;
       done();
     });
   });
 
-  runs(cleanup);
-  waitsFor(cleanupDone, 500, "Test objects to be cleaned up.");
+   after(function(done) {
+    cleanup(done);
+  });
 });
