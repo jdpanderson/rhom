@@ -1,3 +1,5 @@
+var async = require('async');
+var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var Model = require('../lib/Model.js');
 var Cache = require('../lib/Cache.js');
@@ -26,9 +28,9 @@ describe("Cached Model class", function(done) {
 
       client.hgetall(TestModel.getKey(test.id), function(err, res) {
         if (err) done(err);
-        expect(res.foo).toEqual(test.foo);
-        expect(res.bar).toEqual(new String(test.bar).valueOf());
-        expect(res).not.toBe(test);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(String(test.bar));
+        res.should.not.be.eql(test);
         done();
       });
     });
@@ -43,9 +45,9 @@ describe("Cached Model class", function(done) {
 
       TestModel.get(test.id, function(err, res) {
         if (err) done(err);
-        expect(res.id).toBe(test.id);
-        expect(res.foo).toEqual(test.foo);
-        expect(res.bar).toEqual(test.bar);
+        res.id.should.be.exactly(test.id);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(test.bar);
         done();
       });
     });
@@ -63,8 +65,9 @@ describe("Cached Model class", function(done) {
 
         TestModel.get(test.id, function(err, res) {
           if (err) done(err);
-          expect(res.id).toBe(test.id);
-          expect(res.foo).toEqual(test.foo);
+
+          res.id.should.be.exactly(test.id);
+          res.foo.should.be.exactly(test.foo);
           done();
         });
       });
@@ -85,8 +88,8 @@ describe("Cached Model class", function(done) {
 
         m.exec(function(err, res) {
           if (err) done(err);
-          expect(res[0]).toEqual(null);
-          expect(res[1]).toBe(0);
+          should(res[0]).be.exactly(null);
+          res[1].should.be.exactly(0);
           done();
         });
       });
@@ -100,32 +103,32 @@ describe("Cached Model class", function(done) {
     var test1 = new TestModel();
     test1.foo = "first";
     test1.save(function(err, result) {
-      if (err) done(err);
+      if (err) return done(err);
 
       var test2 = new TestModel();
       test2.foo = "second";
       test2.save(function(err, result) {
-        if (err) done(err);
+        if (err) return done(err);
 
         TestModel.get(test1.id, function(err, result) {
-          if (err) done(err);
+          if (err) return done(err);
 
-          expect(result.foo).toBe(test1.foo);
+          result.foo.should.be.exactly(test1.foo);
 
           TestModel.get([test1.id, test2.id], function(err, result) {
-            if (err) done(err);
+            if (err) return done(err);
 
-            expect(result[0].foo).toBe(test1.foo);
-            expect(result[1].foo).toBe(test2.foo);
+            result[0].foo.should.be.exactly(test1.foo);
+            result[1].foo.should.be.exactly(test2.foo);
 
             client.del(TestModel.getKey(test1.id), function(err, result) {
-              if (err) done(err);
+              if (err) return done(err);
 
               TestModel.get([test1.id, test2.id], function(err, result) {
-                if (err) done(err);
+                if (err) return done(err);
 
-                expect(result[0].foo).toBe(test1.foo);
-                expect(result[1].foo).toBe(test2.foo);
+                result[0].foo.should.be.exactly(test1.foo);
+                result[1].foo.should.be.exactly(test2.foo);
 
                 done();
               });
