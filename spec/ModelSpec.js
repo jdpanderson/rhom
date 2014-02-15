@@ -1,3 +1,5 @@
+var async = require('async');
+var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var Model = require('../lib/Model.js');
 
@@ -6,20 +8,20 @@ TestModel.properties = ['foo', 'bar'];
 Model(TestModel, TestModel.properties, client);
 
 describe("Model utility functions", function() {
-  it("generate seqential identifiers", function() {
+  it("generates seqential identifiers", function() {
     var seq1 = Model.sequence();
-    expect(seq1()).toBe("0");
-    expect(seq1()).toBe("1");
+    seq1().should.be.exactly("0");
+    seq1().should.be.exactly("1");
 
     var seq2 = Model.sequence();
-    expect(seq2()).toBe("0");
-    expect(seq2()).toBe("1");
-    expect(seq1()).toBe("2");
+    seq2().should.be.exactly("0");
+    seq2().should.be.exactly("1");
+    seq1().should.be.exactly("2");
   });
 
   it("generate UUIDs by default", function() {
-    expect(typeof(TestModel.idgen())).toBe("string");
-    expect(TestModel.idgen()).toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    (typeof TestModel.idgen()).should.be.exactly("string");
+    TestModel.idgen().should.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
   });
 });
 
@@ -29,15 +31,15 @@ describe("Model class", function(done) {
   });
 
   it("has expected static methods", function() {
-    expect(typeof(TestModel.get)).toBe("function");
-    expect(typeof(TestModel.idgen)).toBe("function");
-    expect(typeof(TestModel.getKey)).toBe("function");
+    (typeof TestModel.get).should.be.exactly("function");
+    (typeof TestModel.idgen).should.be.exactly("function");
+    (typeof TestModel.getKey).should.be.exactly("function");
   });
 
   it("has expected instance methods", function() {
     var test = new TestModel();
-    expect(typeof(test.save)).toBe("function");
-    expect(typeof(test.toObject)).toBe("function");
+    (typeof test.save).should.be.exactly("function");
+    (typeof test.toObject).should.be.exactly("function");
   });
 
   it("(C)reates objects as redis hashes", function(done) {
@@ -49,9 +51,9 @@ describe("Model class", function(done) {
 
       client.hgetall(TestModel.getKey(test.id), function(err, res) {
         if (err) done(err);
-        expect(res.foo).toBe(test.foo);
-        expect(res.bar).toBe(new String(test.bar).valueOf());
-        expect(res).not.toBe(test);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(String(test.bar));
+        res.should.not.be.eql(test);
         done();
       });
     });
@@ -66,9 +68,9 @@ describe("Model class", function(done) {
 
       TestModel.get(test.id, function(err, res) {
         if (err) done(err);
-        expect(res.id).toBe(test.id);
-        expect(res.foo).toBe(test.foo);
-        expect(res.bar).toBe(new String(test.bar).valueOf());
+        res.id.should.be.exactly(test.id);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(String(test.bar));
         done();
       });
     });
@@ -86,8 +88,8 @@ describe("Model class", function(done) {
 
         TestModel.get(test.id, function(err, res) {
           if (err) done(err);
-          expect(res.id).toBe(test.id);
-          expect(res.foo).toBe(test.foo);
+          res.id.should.be.exactly(test.id);
+          res.foo.should.be.exactly(test.foo);
           done();
         });
       });
@@ -108,70 +110,55 @@ describe("Model class", function(done) {
 
         m.exec(function(err, res) {
           if (err) done(err);
-          expect(res[0]).toEqual(null);
-          expect(res[1]).toBe(0);
+          should(res[0]).be.exactly(null);
+          res[1].should.be.exactly(0);
           done();
         });
       });
     });
   });
 
-  it("Can retrieve several objects at once", function() {
-    var saved = 0, result, ids = [];
-    runs(function() {
-      for (var i = 0; i < 5; i++) {
-        var mdl = new TestModel();
-        mdl.save(function() { saved++; });
-        ids.push(mdl.id);
-      }
-    });
+  it("Can retrieve several objects at once", function(done) {
+    var times = 5;
+    async.times(times, function(n, next) {
+      var mdl = new TestModel();
+      mdl.save(function(err, res) {
+        if (err) done(err);
 
-    waitsFor(function() {
-      return saved == 5;
-    }, "All objects to be saved");
-
-    runs(function() {
-      TestModel.get(ids, function(err, res) {
-        result = res;
+        next(err, mdl.id);
       });
-    });
+    }, function(err, ids) {
+      TestModel.get(ids, function(err, res) {
+        if (err) done(err);
 
-    waitsFor(function() {
-      return result !== undefined;
-    }, "Objects to be returned", 500);
-
-    runs(function() {
-      expect(result.length).toBe(saved);
-      for (var i = 0; i < ids.length; i++) {
-        expect(result[i].id).toBe(ids[i]);
-      }
+        res.length.should.be.exactly(times);
+        for (var i = 0; i < ids.length; i++) {
+          res[i].id.should.be.exactly(ids[i]);
+        }
+        done();
+      });
     });
   });
 
-  it("Can enumerate keys", function() {
-    var saved = 0, keys;
-    runs(function() {
-      for (var i = 0; i < 5; i++) {
-        (new TestModel()).save(function() { saved++ });
-      }
-    });
-
-    waitsFor(function() {
-      return saved == 5;
-    }, "All objects to be saved");
-
-    runs(function() {
-      TestModel.all(function(err, res) {
-        keys = res;
+  it("Can enumerate keys", function(done) {
+    var times = 5;
+    async.times(times, function(n, next) {
+      var mdl = new TestModel();
+      mdl.save(function(err, res) {
+        if (err) done(err);
+        next(err, mdl.id);
       });
-    });
+    }, function(err, ids) {
+      TestModel.all(function(err, res) {
+        if (err) done(err);
 
-    waitsFor(function() {
-      return keys !== undefined;
-    }, "Keys to be returned", 500);
+        res.length.should.be.exactly(times);
+        for (var i = 0 ; i < ids.length; i++) {
+          res.indexOf(ids[i]).should.not.eql(-1);
+        }
 
-    runs(function() {
-      expect(keys.length).toBe(saved);
+        done();
+      });
     });
   });
 });
