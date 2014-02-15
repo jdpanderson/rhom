@@ -17,7 +17,8 @@
 	"inflection": ">=1.3.2"
   },
   "devDependencies": {
-    "jasmine-node": ">=1.11.0",
+    "mocha": "*",
+    "should": "*",
     "fakeredis": "*"
   },
   "scripts": {
