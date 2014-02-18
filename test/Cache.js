@@ -7,7 +7,7 @@ var Cache = require('../lib/Cache.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties, client);
+Model(TestModel, TestModel.properties);
 RedisStore(TestModel, client);
 Cache(TestModel);
 

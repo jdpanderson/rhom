@@ -2,6 +2,7 @@ var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var Model = require('../lib/Model.js');
+var RedisStore = require('../lib/RedisStore.js');
 var Relation = require('../lib/Relation.js');
 
 /**
@@ -18,19 +19,24 @@ function Setting() {};
 function Default() {};
 function Permission() {};
 
-Model(User, ['name'], client);
-Model(Role, ['label'], client);
-Model(Setting, ['pref'], client);
-Model(Default, ['dflt'], client);
-Model(Permission, ['desc'], client);
+Model(User, ['name']);
+RedisStore(User, client);
+Model(Role, ['label']);
+RedisStore(Role, client);
+Model(Setting, ['pref']);
+RedisStore(Setting, client);
+Model(Default, ['dflt']);
+RedisStore(Default, client);
+Model(Permission, ['desc']);
+RedisStore(Permission, client);
 
-Relation(User).toOne(Role);
-Relation(Role).toMany(Permission);
-Relation(Role).toOne(Setting);
-Relation(User).via(Role).toOne(Setting);
-Relation(User).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
-Relation(User).via(Role).toMany(Permission);
-Relation(Setting).toOne(Default);
+Relation(User, client).toOne(Role);
+Relation(Role, client).toMany(Permission);
+Relation(Role, client).toOne(Setting);
+Relation(User, client).via(Role).toOne(Setting);
+Relation(User, client).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
+Relation(User, client).via(Role).toMany(Permission);
+Relation(Setting, client).toOne(Default);
 
 var user, role, setting, dflt, perm1, perm2;
 
