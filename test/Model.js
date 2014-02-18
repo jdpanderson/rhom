@@ -22,8 +22,8 @@ describe("Model utility functions", function() {
   });
 
   it("generate UUIDs by default", function() {
-    (typeof TestModel.idgen()).should.be.exactly("string");
-    TestModel.idgen().should.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    (typeof TestModel._mdl.idgen()).should.be.exactly("string");
+    TestModel._mdl.idgen().should.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
   });
 });
 
@@ -34,7 +34,7 @@ describe("Model class", function(done) {
 
   it("has expected static methods", function() {
     (typeof TestModel.get).should.be.exactly("function");
-    (typeof TestModel.idgen).should.be.exactly("function");
+    (typeof TestModel._mdl.idgen).should.be.exactly("function");
     (typeof TestModel.getKey).should.be.exactly("function");
   });
 

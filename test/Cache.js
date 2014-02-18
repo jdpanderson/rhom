@@ -2,11 +2,13 @@ var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var Model = require('../lib/Model.js');
+var RedisStore = require('../lib/RedisStore.js');
 var Cache = require('../lib/Cache.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
 Model(TestModel, TestModel.properties, client);
+RedisStore(TestModel, client);
 Cache(TestModel);
 
 /**
