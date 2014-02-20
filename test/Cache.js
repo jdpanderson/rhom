@@ -42,16 +42,21 @@ describe("Cached Model class", function(done) {
     var test = new TestModel();
     test.foo = "test one two three";
     test.bar = 23456;
+ 
     test.save(function(err) {
       if (err) done(err);
 
-      TestModel.get(test.id, function(err, res) {
-        if (err) done(err);
-        res.id.should.be.exactly(test.id);
-        res.foo.should.be.exactly(test.foo);
-        res.bar.should.be.exactly(test.bar);
-        done();
-      });
+      /* The save to cache and get end up synchronous unless we do this. */
+      setTimeout(function() {
+        TestModel.get(test.id, function(err, res) {
+          if (err) done(err);
+
+          res.id.should.be.exactly(test.id);
+          res.foo.should.be.exactly(test.foo);
+          res.bar.should.be.exactly(test.bar);
+          done();
+        });
+      }, 0);
     });
   });
 

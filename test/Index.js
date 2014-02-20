@@ -31,11 +31,14 @@ describe("Indexed Model class", function(done) {
     t.save(function(err, res) {
       if (err) return done(err);
 
-      TestModel.getByFoo("blah", function(err, res) {
-        res.length.should.be.exactly(1);
-        res[0].foo.should.be.exactly("blah");
-        done();
-      });
+      /* Allow the afterSave handler to finish. */
+      setTimeout(function() {
+        TestModel.getByFoo("blah", function(err, res) {
+          res.length.should.be.exactly(1);
+          res[0].foo.should.be.exactly("blah");
+          done();
+        });
+      }, 0);
     });
   });
 
