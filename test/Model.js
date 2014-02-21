@@ -51,6 +51,8 @@ describe("Model class", function(done) {
     test.save(function(err, res) {
       if (err) done(err);
 
+      res.should.be.true;
+
       client.hgetall(TestModel.getKey(test.id), function(err, res) {
         if (err) done(err);
 
@@ -59,6 +61,11 @@ describe("Model class", function(done) {
         res.should.not.be.eql(test);
         done();
       });
+    }).then(function(result) {
+      // Don't need to re-test the result, just that the callback and promise return the same thing.
+      result.should.be.true;
+    }, function(error) {
+      done(error);
     });
   });
 
@@ -75,6 +82,12 @@ describe("Model class", function(done) {
         res.foo.should.be.exactly(test.foo);
         res.bar.should.be.exactly(String(test.bar));
         done();
+      }).then(function(res) {
+        res.id.should.be.exactly(test.id);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(String(test.bar));
+      }, function(error) {
+        done(error);
       });
     });
   });

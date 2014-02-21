@@ -3,6 +3,7 @@ var Model = require('../lib/Model.js');
 var RedisStore = require('../lib/RedisStore.js');
 var Index = require('../lib/Index.js');
 var should = require('should');
+var async = require('async');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
@@ -46,27 +47,40 @@ describe("Indexed Model class", function(done) {
     var t = new TestModel();
     t.foo = "blah";
     t.bar = "asdf";
-    t.save(function(err, res) {
-      if (err) return done(err);
 
-      t.foo = "updated value";
-      t.save(function(err, res) {
+    var t2 = new TestModel();
+    t.foo = "other 1";
+    t.bar = "other 2";
+
+    async.parallel(
+      [
+        function(cb) { t.save(cb); },
+        function(cb) { t2.save(cb); }
+      ],
+      function(err, res) {
         if (err) return done(err);
 
-        TestModel.getByFoo("updated value", function(err, res) {
+        t.foo = "updated value";
+        t.save(function(err, res) {
           if (err) return done(err);
 
-          res.length.should.be.exactly(1);
-          res[0].foo.should.be.exactly("updated value");
-
-          TestModel.getByFoo("blah", function(err, res) {
+          setTimeout(function() {
+            TestModel.getByFoo("updated value", function(err, res) {
               if (err) return done(err);
 
-              res.length.should.be.exactly(0);
-              done();
-          });
+              res.length.should.be.exactly(1);
+              res[0].foo.should.be.exactly("updated value");
+
+              TestModel.getByFoo("blah", function(err, res) {
+                  if (err) return done(err);
+
+                  res.length.should.be.exactly(0);
+                  done();
+              });
+            });
+          }, 0);
         });
-      });
-    });
+      }
+    );
   });
 });
