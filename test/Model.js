@@ -1,21 +1,19 @@
 var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
-var RedisStore = require('../lib/RedisStore.js');
+var rhom = require('../index.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties);
-RedisStore(TestModel, client);
+rhom(TestModel, TestModel.properties, client);
 
 describe("Model utility functions", function() {
   it("generates seqential identifiers", function() {
-    var seq1 = Model.sequence();
+    var seq1 = rhom.model.sequence();
     seq1().should.be.exactly("0");
     seq1().should.be.exactly("1");
 
-    var seq2 = Model.sequence();
+    var seq2 = rhom.model.sequence();
     seq2().should.be.exactly("0");
     seq2().should.be.exactly("1");
     seq1().should.be.exactly("2");

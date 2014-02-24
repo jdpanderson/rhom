@@ -1,9 +1,7 @@
 var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
-var RedisStore = require('../lib/RedisStore.js');
-var Relation = require('../lib/Relation.js');
+var rhom = require('../index.js');
 
 /**
  * Create a fake example where:
@@ -12,6 +10,7 @@ var Relation = require('../lib/Relation.js');
  * - A role has one setting hash (i.e. several settings, stored in one hash)
  * - A user, through role, has one setting hash. Tests indirect one-to-one.
  * - A user, through role, has many permissions. Tests indirect one-to-many.
+ * - A user, through role and setting, has one default. Tests a contrived deep-relation.
  */
 function User() {};
 function Role() {};
@@ -19,24 +18,19 @@ function Setting() {};
 function Default() {};
 function Permission() {};
 
-Model(User, ['name']);
-RedisStore(User, client);
-Model(Role, ['label']);
-RedisStore(Role, client);
-Model(Setting, ['pref']);
-RedisStore(Setting, client);
-Model(Default, ['dflt']);
-RedisStore(Default, client);
-Model(Permission, ['desc']);
-RedisStore(Permission, client);
+rhom(User, ['name'], client);
+rhom(Role, ['label'], client);
+rhom(Setting, ['pref'], client);
+rhom(Default, ['dflt'], client);
+rhom(Permission, ['desc'], client);
 
-Relation(User, client).toOne(Role);
-Relation(Role, client).toMany(Permission);
-Relation(Role, client).toOne(Setting);
-Relation(User, client).via(Role).toOne(Setting);
-Relation(User, client).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
-Relation(User, client).via(Role).toMany(Permission);
-Relation(Setting, client).toOne(Default);
+rhom.relates(User, client).toOne(Role);
+rhom.relates(Role, client).toMany(Permission);
+rhom.relates(Role, client).toOne(Setting);
+rhom.relates(User, client).via(Role).toOne(Setting);
+rhom.relates(User, client).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
+rhom.relates(User, client).via(Role).toMany(Permission);
+rhom.relates(Setting, client).toOne(Default);
 
 var user, role, setting, dflt, perm1, perm2;
 

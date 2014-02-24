@@ -1,15 +1,12 @@
 var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
-var RedisStore = require('../lib/RedisStore.js');
-var Cache = require('../lib/Cache.js');
+var rhom = require('../index.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties);
-RedisStore(TestModel, client);
-Cache(TestModel);
+rhom(TestModel, TestModel.properties, client);
+rhom.cache(TestModel);
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.
