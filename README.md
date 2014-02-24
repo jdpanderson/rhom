@@ -92,7 +92,7 @@ user1.getGroup(function(err, group) {
 });
 
 user1.getPermissions(function(err, permissions) {
-	permissions; // should be a list of related O3 instances.
+	permissions; // should be a list of indirectly prelated permission instances.
 });
 
 /* Ridiculous amounts of chaining should be possible, but only two levels is tested. */
@@ -136,7 +136,7 @@ Cls.get('foo').then(function(obj) {
 }, function(err) {
 	// Do something with the error	
 });
-// get/all/purge/save/delete
+// Should work for all asynchronous calls: get/all/purge/save/delete.
 ```
 
 Caveats
