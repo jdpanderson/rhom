@@ -66,44 +66,77 @@ While I'm not sure it's advisable (consider a relational database), it is possib
 Relationships will also let you shoot yourself in the foot. If you don't define the relationship and try to call it, it will blow up.
 
 ```javascript
-function O1() {};
-function O2() {};
-function O3() {};
+function User() {};
+function Group() {};
+function Permission() {};
 
-rhom(O1, [], client);
-rhom(O2, [], client);
-rhom(O3, [], client);
+rhom(User, ['username'], client);
+rhom(Group, ['name'], client);
+rhom(Permission, ['label'], client);
 
-rhom.relates(O1).toOne(O2); // 1 to 1. Getter is get<Classname>
-rhom.relates(O2).toMany(O3); // 1 to N. Getter is pluralized get<Classnames>.
-rhom.relates(O1).via(O2).toMany(O3); // Indirect
+rhom.relates(User).toOne(Group); // 1 to 1. Getter is get<Classname>
+rhom.relates(Group).toMany(Permission); // 1 to N. Getter is pluralized get<Classnames>.
+rhom.relates(User).via(Group).toMany(Permission); // Indirect
 
-var o1 = /* retrieved instance of O1 */;
-o1.getO2(function(err, o2) {
+var user1 = /* retrieved instance of User */;
+user1.getGroup(function(err, group) {
 	if (err) return;
 
-	o2; // should be a related instance of O2.
+	if (!group) return; // if available, should be a related instance of group
 
-	o2.getO3s(function(err, o3s) {
+	groups.getPermissions(function(err, permissions) {
 		if (err) return;
 
-		o3s; // should be a list of related O3 instances. 
+		permissions; // should be a list of related O3 instances. 
 	});
 });
 
-o1.getO3s(function(err, o3s) {
-	o3s; // should be a list of related O3 instances.
+user1.getPermissions(function(err, permissions) {
+	permissions; // should be a list of related O3 instances.
 });
 
 /* Ridiculous amounts of chaining should be possible, but only two levels is tested. */
 // If these were defined models.
-// rhom.relates(O1).via(O2).via(O3).via(O4).via(O5)toOne(O6); // toMany also works, but intermediary must be defined one-to-one.
+// rhom.relates(User).via(Group).via(Permission).via(x).via(y)toOne(Something);
+// toMany also works, but all intermediaries must be defined as one-to-one.
 // or
-// rhom.relates(O2).via([O2, O3, O4, O5]).toOne(O6); // Same thing.
+// rhom.relates(User).via([Group, Permission, x, y]).toOne(Something); // Same thing.
 
 /* In case you're curious */
-o2.getO1(); // Reverse relationship would not be defined.
-o1.getO3(); // Singular would not be defined. 
+Group.getUser(); // Reverse relationship is not automatically defined.
+User.getPermission(); // Singular would not be defined; toMany is pluralized.
+```
+
+Indexing
+--------
+
+Adds an equality index so that fields can be searched quickly.
+
+```javascript
+function User() {};
+rhom(User, ['username', 'password', 'name', 'email'], client);
+rhom.index(User, "username", client); // Creates User.getByUsername();
+rhom.index(User, "email", client); // Creates User.getByEmail();
+
+User.getByUsername('jsmith', function(err, users) {
+	if (err) return;
+
+	if (!users) return; // If available, should be a list of users with the given username.
+});
+```
+
+Promises
+========
+
+All the getters on the base object should return promises. Not currently recommended, as some of the periphery modules don't use them yet.
+
+```javascript
+Cls.get('foo').then(function(obj) {
+	// Do something with the retreived object.
+}, function(err) {
+	// Do something with the error	
+});
+// get/all/purge/save/delete
 ```
 
 Caveats
