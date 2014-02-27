@@ -1,16 +1,27 @@
 /* Main mixin augments classes with CRUD */
-module.exports = require('./lib/Model.js');
+var Model = require('./lib/Model.js');
+
+/* Redis storage for models. */
+var RedisStore = require('./lib/RedisStore.js');
 
 /* Cache mixin adds transparent caching on top of standard CRUD. */
-module.exports.cache = require('./lib/Cache.js');
+var Cache = require('./lib/Cache.js');
 
 /* Relations mixin adds object relationships. */
-module.exports.relates = require('./lib/Relation.js');
+var Relation = require('./lib/Relation.js');
 
 /* Index a field by value. */
-// Works, but not ready. See Index.js for info.
-module.exports.index = require('./lib/Index.js');
+var Index = require('./lib/Index.js');
+
+/* Export the simplified interface */
+module.exports = function(cls, properties, client, options) {
+	Model(cls, properties, options);
+	RedisStore(cls, client);
+};
+module.exports.model = Model;
+module.exports.redis = RedisStore;
+module.exports.cache = Cache;
+module.exports.relates = Relation;
+module.exports.index = Index;
 
 // Placeholder for future ideas. See bottom of README.md for info.
-//module.exports.eventemitter = require('./EventEmitter.js');
-//module.exports.index = require('./Index.js');

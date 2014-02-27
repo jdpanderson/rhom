@@ -1,27 +1,27 @@
 var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
+var rhom = require('../index.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties, client);
+rhom(TestModel, TestModel.properties, client);
 
 describe("Model utility functions", function() {
   it("generates seqential identifiers", function() {
-    var seq1 = Model.sequence();
+    var seq1 = rhom.model.sequence();
     seq1().should.be.exactly("0");
     seq1().should.be.exactly("1");
 
-    var seq2 = Model.sequence();
+    var seq2 = rhom.model.sequence();
     seq2().should.be.exactly("0");
     seq2().should.be.exactly("1");
     seq1().should.be.exactly("2");
   });
 
   it("generate UUIDs by default", function() {
-    (typeof TestModel.idgen()).should.be.exactly("string");
-    TestModel.idgen().should.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    (typeof TestModel._mdl.idgen()).should.be.exactly("string");
+    TestModel._mdl.idgen().should.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
   });
 });
 
@@ -32,7 +32,7 @@ describe("Model class", function(done) {
 
   it("has expected static methods", function() {
     (typeof TestModel.get).should.be.exactly("function");
-    (typeof TestModel.idgen).should.be.exactly("function");
+    (typeof TestModel._mdl.idgen).should.be.exactly("function");
     (typeof TestModel.getKey).should.be.exactly("function");
   });
 
@@ -49,13 +49,21 @@ describe("Model class", function(done) {
     test.save(function(err, res) {
       if (err) done(err);
 
+      res.should.be.true;
+
       client.hgetall(TestModel.getKey(test.id), function(err, res) {
         if (err) done(err);
+
         res.foo.should.be.exactly(test.foo);
         res.bar.should.be.exactly(String(test.bar));
         res.should.not.be.eql(test);
         done();
       });
+    }).then(function(result) {
+      // Don't need to re-test the result, just that the callback and promise return the same thing.
+      result.should.be.true;
+    }, function(error) {
+      done(error);
     });
   });
 
@@ -72,6 +80,12 @@ describe("Model class", function(done) {
         res.foo.should.be.exactly(test.foo);
         res.bar.should.be.exactly(String(test.bar));
         done();
+      }).then(function(res) {
+        res.id.should.be.exactly(test.id);
+        res.foo.should.be.exactly(test.foo);
+        res.bar.should.be.exactly(String(test.bar));
+      }, function(error) {
+        done(error);
       });
     });
   });

@@ -1,11 +1,12 @@
+var should = require('should');
+var async = require('async');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
-var Index = require('../lib/Index.js');
+var rhom = require('../index.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties, client);
-Index(TestModel, "foo");
+rhom(TestModel, TestModel.properties, client);
+rhom.index(TestModel, "foo", client);
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.
@@ -28,11 +29,14 @@ describe("Indexed Model class", function(done) {
     t.save(function(err, res) {
       if (err) return done(err);
 
-      TestModel.getByFoo("blah", function(err, res) {
-        res.length.should.be.exactly(1);
-        res[0].foo.should.be.exactly("blah");
-        done();
-      });
+      /* Allow the afterSave handler to finish. */
+      setTimeout(function() {
+        TestModel.getByFoo("blah", function(err, res) {
+          res.length.should.be.exactly(1);
+          res[0].foo.should.be.exactly("blah");
+          done();
+        });
+      }, 0);
     });
   });
 
@@ -40,27 +44,40 @@ describe("Indexed Model class", function(done) {
     var t = new TestModel();
     t.foo = "blah";
     t.bar = "asdf";
-    t.save(function(err, res) {
-      if (err) return done(err);
 
-      t.foo = "updated value";
-      t.save(function(err, res) {
+    var t2 = new TestModel();
+    t.foo = "other 1";
+    t.bar = "other 2";
+
+    async.parallel(
+      [
+        function(cb) { t.save(cb); },
+        function(cb) { t2.save(cb); }
+      ],
+      function(err, res) {
         if (err) return done(err);
 
-        TestModel.getByFoo("updated value", function(err, res) {
+        t.foo = "updated value";
+        t.save(function(err, res) {
           if (err) return done(err);
 
-          res.length.should.be.exactly(1);
-          res[0].foo.should.be.exactly("updated value");
-
-          TestModel.getByFoo("blah", function(err, res) {
+          setTimeout(function() {
+            TestModel.getByFoo("updated value", function(err, res) {
               if (err) return done(err);
 
-              res.length.should.be.exactly(0);
-              done();
-          });
+              res.length.should.be.exactly(1);
+              res[0].foo.should.be.exactly("updated value");
+
+              TestModel.getByFoo("blah", function(err, res) {
+                  if (err) return done(err);
+
+                  res.length.should.be.exactly(0);
+                  done();
+              });
+            });
+          }, 0);
         });
-      });
-    });
+      }
+    );
   });
 });

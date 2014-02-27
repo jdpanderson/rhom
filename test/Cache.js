@@ -1,13 +1,12 @@
 var async = require('async');
 var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var Model = require('../lib/Model.js');
-var Cache = require('../lib/Cache.js');
+var rhom = require('../index.js');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-Model(TestModel, TestModel.properties, client);
-Cache(TestModel);
+rhom(TestModel, TestModel.properties, client);
+rhom.cache(TestModel);
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.
@@ -40,16 +39,21 @@ describe("Cached Model class", function(done) {
     var test = new TestModel();
     test.foo = "test one two three";
     test.bar = 23456;
+ 
     test.save(function(err) {
       if (err) done(err);
 
-      TestModel.get(test.id, function(err, res) {
-        if (err) done(err);
-        res.id.should.be.exactly(test.id);
-        res.foo.should.be.exactly(test.foo);
-        res.bar.should.be.exactly(test.bar);
-        done();
-      });
+      /* The save to cache and get end up synchronous unless we do this. */
+      setTimeout(function() {
+        TestModel.get(test.id, function(err, res) {
+          if (err) done(err);
+
+          res.id.should.be.exactly(test.id);
+          res.foo.should.be.exactly(test.foo);
+          res.bar.should.be.exactly(test.bar);
+          done();
+        });
+      }, 0);
     });
   });
 
