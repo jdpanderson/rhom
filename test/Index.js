@@ -2,6 +2,7 @@ var should = require('should');
 var async = require('async');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var rhom = require('../index.js');
+var crypto = require('crypto');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
@@ -79,5 +80,60 @@ describe("Indexed Model class", function(done) {
         });
       }
     );
+  });
+
+  it("Deletes objects from the index set when the object itself is deleted", function(done) {
+    var t = new TestModel();
+    t.foo = "bar";
+    t.bar = "baz";
+
+    /* XXX this is a copy/paste from the internal impl */
+    var hash = crypto.createHash('sha256');
+    hash.update("bar");
+    var key = TestModel.getKey("ix:foo:" + hash.digest('hex').substr(0, 8));
+    
+    t.save(function(err, res) {
+      if (err) return done(err);
+      var id = t.id;
+
+      setTimeout(function() {
+        client.smembers(key, function(err, res) {
+          if (err) return done(err);
+          res.length.should.be.exactly(1);
+          res[0].should.be.exactly(id);
+
+          t.delete(function(err, res) {
+            if (err) return done(err);
+            res.should.be.exactly(true);
+
+            setTimeout(function() {
+              client.smembers(key, function(err, res) {
+                res.length.should.be.exactly(0);
+                done();
+              });
+            }, 0);
+          });
+        });
+      }, 0);
+    });
+  });
+
+  
+
+  it("Bails out early if nothing is found", function(done) {
+    var listener = function(evt) {
+      TestModel._mdl.events.removeListener("get", listener);
+      throw new Error("No get should have been executed.");
+    };
+
+    /* A little odd: hook into internal model event for testing. */
+    TestModel._mdl.events.on("get", listener);
+
+    TestModel.getByFoo("bar", function(err, res) {
+      should(err).be.exactly(null);
+      res.length.should.be.exactly(0);
+      TestModel._mdl.events.removeListener("get", listener);
+      done();
+    });
   });
 });
