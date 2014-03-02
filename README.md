@@ -63,8 +63,6 @@ Relationships
 
 While I'm not sure it's advisable (consider a relational database), it is possible to create relationships between mapped objects using the rhom.relates mixin. Relationships must be defined explicitly on every level, and relationships are limited. For example, a one-to-one relationship only creates method definitions on the source object. If the reverse is also desired, define that too - it isn't created automatically. Indirect relationships are also possible.
 
-Relationships will also let you shoot yourself in the foot. If you don't define the relationship and try to call it, it will blow up.
-
 ```javascript
 function User() {};
 function Group() {};
@@ -106,6 +104,11 @@ user1.getPermissions(function(err, permissions) {
 Group.getUser(); // Reverse relationship is not automatically defined.
 User.getPermission(); // Singular would not be defined; toMany is pluralized.
 ```
+
+Notes:
+ * Relationships will let you shoot yourself in the foot. If you don't define a relationship and try to call it (e.g. intermediaries), it will blow up.
+ * Indirect relationships don't populate writer functions. This is partially because setting an indirect relation would also implicitly set a direct relationship on two other classes that may not have intended it. To give an example based on the sample code above, if user.addPermission() existed you would logically think it would add a permission for that user. It would, but it would also add it for the user's entire group - which isn't obvious. user.getGroup().addPermission() is much clearer.
+
 
 Indexing
 --------
