@@ -176,6 +176,7 @@ describe("Model class", function(done) {
     });
   });
 
+  /* Regression test */
   it("Catches missing argument to getter", function(done) {
     TestModel.get(undefined, function(err, res) {
       err.should.not.be.null;
@@ -184,5 +185,35 @@ describe("Model class", function(done) {
     }, function(error) {
       done();
     });
+  });
+
+  /* Regression test: add a bunch of objects and test the structure manually.  */
+  it("Generates expected structure in redis", function(done) {
+    var t1 = new TestModel();
+    t1.id = "t1";
+    t1.foo = "t1-foo";
+    t1.bar = "t2-bar";
+
+    var t2 = new TestModel();
+    t2.id = "t2";
+    t2.foo = "t2_foo";
+    t2.bar = "t2_bar";
+
+    async.parallel(
+      [
+        function(cb) { t1.save(cb); },
+        function(cb) { t2.save(cb); }
+      ],
+      function(err, res) {
+        client.getKeyspace({map: true}, function(err, res) {
+          res.should.be.eql({
+            'TestModel:all': [ 't1', 't2' ],
+            'TestModel:t1': [ 'bar', 't2-bar', 'foo', 't1-foo' ],
+            'TestModel:t2': [ 'bar', 't2_bar', 'foo', 't2_foo' ]
+          });
+          done();
+        });
+      }
+    );
   });
 });
