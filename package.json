@@ -24,6 +24,6 @@
     "fakeredis": "*"
   },
   "scripts": {
-      "test": "./node_modules/.bin/mocha test"
+      "test": "./node_modules/.bin/mocha --recursive test"
   }
 }

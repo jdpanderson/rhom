@@ -1,7 +1,7 @@
 var should = require('should');
 var async = require('async');
 var client = require('fakeredis').createClient(null, null, {fast: true});
-var rhom = require('../index.js');
+var rhom = require('../../index.js');
 var crypto = require('crypto');
 
 function TestModel() {}
