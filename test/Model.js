@@ -175,4 +175,14 @@ describe("Model class", function(done) {
       });
     });
   });
+
+  it("Catches missing argument to getter", function(done) {
+    TestModel.get(undefined, function(err, res) {
+      err.should.not.be.null;
+    }).then(function(result) {
+      done("Result not expected")
+    }, function(error) {
+      done();
+    });
+  });
 });

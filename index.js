@@ -17,6 +17,21 @@ var Index = require('./lib/Index.js');
 module.exports = function(cls, properties, client, options) {
 	Model(cls, properties, options);
 	RedisStore(cls, client);
+
+	return {
+		cache: function(timeout) {
+			Cache(cls, timeout);
+			return this;
+		},
+		index: function(field) {
+			Index(cls, field);
+			return this;
+		},
+		relates: function() {
+			Relation(cls);
+			return this;
+		}
+	};
 };
 module.exports.model = Model;
 module.exports.redis = RedisStore;

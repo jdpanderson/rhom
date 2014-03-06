@@ -3,10 +3,15 @@ var should = require('should');
 var client = require('fakeredis').createClient(null, null, {fast: true});
 var rhom = require('../index.js');
 
-function TestModel() {}
+function TestModel() {};
 TestModel.properties = ['foo', 'bar'];
 rhom(TestModel, TestModel.properties, client);
 rhom.cache(TestModel);
+
+function TestTimeout() {};
+TestTimeout.properties = ['baz'];
+rhom(TestTimeout, TestTimeout.properties, client);
+rhom.cache(TestTimeout, 10);
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.
@@ -16,6 +21,29 @@ rhom.cache(TestModel);
 describe("Cached Model class", function(done) {
   beforeEach(function(done) {
     TestModel.purge(done);
+  });
+
+  it("Handles timeouts", function(done) {
+    var test = new TestTimeout();
+    test.baz = "blah";
+    test.save(function(err, res) {
+      if (err) done(err);
+
+      /* 0 -> should get cache entry. */
+      setTimeout(function() {
+        TestTimeout.get(test.id, function(err, res) {
+          res._cache.should.be.true;
+        });  
+      }, 0);
+
+      /* 5 > 1 -> should not get cache entry. */
+      setTimeout(function() {
+        TestTimeout.get(test.id, function(err, res) {
+          should(res._cache).be.exactly(undefined);
+          done();
+        })
+      }, 20);
+    });
   });
 
   it("(C)reates objects as redis hashes", function(done) {

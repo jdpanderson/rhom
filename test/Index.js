@@ -122,17 +122,17 @@ describe("Indexed Model class", function(done) {
 
   it("Bails out early if nothing is found", function(done) {
     var listener = function(evt) {
-      TestModel._mdl.events.removeListener("get", listener);
+      TestModel._mdl.removeListener("get", listener);
       throw new Error("No get should have been executed.");
     };
 
     /* A little odd: hook into internal model event for testing. */
-    TestModel._mdl.events.on("get", listener);
+    TestModel._mdl.on("get", listener);
 
     TestModel.getByFoo("bar", function(err, res) {
       should(err).be.exactly(null);
       res.length.should.be.exactly(0);
-      TestModel._mdl.events.removeListener("get", listener);
+      TestModel._mdl.removeListener("get", listener);
       done();
     });
   });
