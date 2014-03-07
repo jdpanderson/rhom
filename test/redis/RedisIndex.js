@@ -118,8 +118,6 @@ describe("Indexed Model class", function(done) {
     });
   });
 
-  
-
   it("Bails out early if nothing is found", function(done) {
     var listener = function(evt) {
       TestModel._mdl.removeListener("get", listener);
@@ -136,4 +134,59 @@ describe("Indexed Model class", function(done) {
       done();
     });
   });
+
+  /* Regression test: add a bunch of objects and test the structure manually.  */
+  it("Generates expected structure in redis", function(done) {
+    var t1 = new TestModel();
+    t1.id = "t1";
+    t1.foo = "t1-foo";
+    t1.bar = "t2-bar";
+
+    var t2 = new TestModel();
+    t2.id = "t2";
+    t2.foo = "t2_foo";
+    t2.bar = "t2_bar";
+
+    var t3 = new TestModel();
+    t3.id = "t3";
+    t3.foo = "t3+foo";
+    t3.bar = "t3+bar";
+
+    async.parallel(
+      [
+        function(cb) { t1.save(cb); },
+        function(cb) { t2.save(cb); },
+        function(cb) { t3.save(cb); }
+      ],
+      function(err, res) {
+        if (err) return done(err);
+
+        t2.foo = "t2@foo";
+
+        async.parallel(
+          [
+            function(cb) { t2.save(cb); },
+            function(cb) { t3.delete(cb); }
+          ],
+          function(err, res) {
+            if (err) return done(err);
+
+            setTimeout(function() {
+              client.getKeyspace({map: true}, function(err, res) {
+                res.should.be.eql({
+                  'TestModel:all': [ 't1', 't2' ],
+                  'TestModel:ix:foo:6ba77d41': [ 't1' ],
+                  'TestModel:ix:foo:977921b3': [ 't2' ],
+                  'TestModel:t1': [ 'bar', 't2-bar', 'foo', 't1-foo' ],
+                  'TestModel:t2': [ 'bar', 't2_bar', 'foo', 't2@foo' ]
+                });
+                done();
+              });
+            }, 0);
+          }
+        );
+      }
+    );
+  });
+
 });
