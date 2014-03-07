@@ -88,7 +88,9 @@ function cleanup(done) {
     [
       function(cb) { User.purge(cb); },
       function(cb) { Role.purge(cb); },
-      function(cb) { Permission.purge(cb); }
+      function(cb) { Permission.purge(cb); },
+      function(cb) { Default.purge(cb); },
+      function(cb) { Setting.purge(cb); }
     ],
     function(err, results) {
       err? done(err) : done();
@@ -261,7 +263,53 @@ describe("Indirect model relationships", function(done) {
     });
   });
 
-   after(function(done) {
+  after(function(done) {
     cleanup(done);
+  });
+});
+
+describe("Regression test", function() {
+  /* Regression test: add a bunch of objects and test the structure manually.  */
+  // XXX NOT DONE
+  it("Generate expected structure in redis", function(done) {
+    var user = new User();
+    user.id = "u";
+    user.name = "uname";
+
+    var role = new Role();
+    role.id = "r";
+    role.label = "rlabel";
+
+    var perm = new Permission();
+    perm.id = "p";
+    perm.desc = "pdesc";
+
+    async.parallel(
+      [
+        function(cb) { user.save(cb); },
+        function(cb) { role.save(cb); },
+        function(cb) { perm.save(cb); },
+        function(cb) { user.setRole(role, cb); },
+        function(cb) { role.addPermission(perm, cb); }
+      ],
+      function(err, res) {
+        if (err) return done(err);
+
+        client.getKeyspace({map: true}, function(err, res) {
+          res.should.be.eql({
+            'Permission:all': [ 'p' ],
+            'Permission:p': [ 'desc', 'pdesc' ],
+            'Role:all': [ 'r' ],
+            'Role:r': [ 'label', 'rlabel' ],
+            'Role:r:Permissions': [ 'p' ],
+            'User:all': [ 'u' ],
+            'User:u': [ 'name', 'uname' ],
+            'User:u:Role': 'r' }
+          );
+          //console.log(res);
+          done();
+        });
+      }
+    );
   });
 });
