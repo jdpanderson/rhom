@@ -268,10 +268,84 @@ describe("Indirect model relationships", function(done) {
   });
 });
 
-describe("Regression test", function() {
+describe("Regression tests", function() {
+  /**
+   * Doing a get where the reference has been left hanging cleans up automatically.
+   */
+  it("Cleans up dead-ends (to-one relation)", function(done) {
+    var user = new User();
+    user.id = "u";
+    user.name = "uname";
+
+    var role = new Role();
+    role.id = "r";
+    role.label = "rlabel";
+
+    async.parallel(
+      [
+        function(cb) { user.save(cb); },
+        //function(cb) { role.save(cb); }, // Point of this test is to leave a link hanging.
+        function(cb) { user.setRole(role, cb); }
+      ],
+      function(err, res) {
+        if (err) return done(err);
+
+        user.getRole(function(err, res) {
+          if (err) return done(err);
+
+          client.getKeyspace({map: true}, function(err, res) {
+            if (err) return done(err);
+
+            res['User:u'].should.be.eql(['name', 'uname']);
+            should(res['User:u:Role']).be.undefined;
+            done();
+          });
+          
+        });
+      }
+    );
+  });
+
+    /**
+   * Doing a get where the reference has been left hanging cleans up automatically.
+   */
+  it("Cleans up dead-ends (to-many relation)", function(done) {
+    var role = new Role();
+    role.id = "r";
+    role.label = "rlabel";
+
+    var perm = new Permission();
+    perm.id = "p";
+    perm.desc = "pdesc";
+
+    async.parallel(
+      [
+        function(cb) { role.save(cb); },
+        //function(cb) { perm.save(cb); }, // Point of this test is to leave a link hanging.
+        function(cb) { role.addPermission(perm, cb); }
+      ],
+      function(err, res) {
+        if (err) return done(err);
+
+        role.getPermissions(function(err, res) {
+          if (err) return done(err);
+
+          client.getKeyspace({map: true}, function(err, res) {
+            if (err) return done(err);
+
+            res['Role:r'].should.be.eql(['label', 'rlabel']);
+            should(res['Role:r:Permissions']).be.undefined;
+            done();
+          });
+          
+        });
+      }
+    );
+  });
+
   /* Regression test: add a bunch of objects and test the structure manually.  */
   // XXX NOT DONE
-  it("Generate expected structure in redis", function(done) {
+  it("Generates expected structure in redis", function(done) {
     var user = new User();
     user.id = "u";
     user.name = "uname";
