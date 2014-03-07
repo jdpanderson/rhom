@@ -199,20 +199,40 @@ describe("Model class", function(done) {
     t2.foo = "t2_foo";
     t2.bar = "t2_bar";
 
+    var t3 = new TestModel();
+    t3.id = "t3";
+    t3.foo = "t3+foo";
+    t3.bar = "t3+bar";
+
     async.parallel(
       [
         function(cb) { t1.save(cb); },
-        function(cb) { t2.save(cb); }
+        function(cb) { t2.save(cb); },
+        function(cb) { t3.save(cb); }
       ],
       function(err, res) {
-        client.getKeyspace({map: true}, function(err, res) {
-          res.should.be.eql({
-            'TestModel:all': [ 't1', 't2' ],
-            'TestModel:t1': [ 'bar', 't2-bar', 'foo', 't1-foo' ],
-            'TestModel:t2': [ 'bar', 't2_bar', 'foo', 't2_foo' ]
-          });
-          done();
-        });
+        if (err) return done(err);
+
+        t2.foo = "t2@foo";
+
+        async.parallel(
+          [
+            function(cb) { t2.save(cb); },
+            function(cb) { t3.delete(cb); }
+          ],
+          function(err, res) {
+            if (err) return done(err);
+
+            client.getKeyspace({map: true}, function(err, res) {
+              res.should.be.eql({
+                'TestModel:all': [ 't1', 't2' ],
+                'TestModel:t1': [ 'bar', 't2-bar', 'foo', 't1-foo' ],
+                'TestModel:t2': [ 'bar', 't2_bar', 'foo', 't2@foo' ]
+              });
+              done();
+            });
+          }
+        );
       }
     );
   });
