@@ -32,8 +32,12 @@ module.exports = function(cls, properties, client, options) {
 };
 module.exports.model = Model;
 module.exports.cache = Cache;
-module.exports.redis = RedisStore;
 module.exports.relates = RedisRelation;
 module.exports.index = RedisIndex;
+module.exports.redis = {
+	store: RedisStore,
+	relates: RedisRelation,
+	index: RedisIndex
+};
 
 // Placeholder for future ideas. See bottom of README.md for info.

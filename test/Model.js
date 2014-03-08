@@ -17,6 +17,11 @@ describe("Model utility functions", function() {
     seq2().should.be.exactly("0");
     seq2().should.be.exactly("1");
     seq1().should.be.exactly("2");
+
+    var seq3 = rhom.model.sequence(123);
+    seq3().should.be.exactly("123");
+    seq3().should.be.exactly("124");
+    seq1().should.be.exactly("3");
   });
 
   it("generate UUIDs by default", function() {
@@ -28,6 +33,36 @@ describe("Model utility functions", function() {
 describe("Model class", function(done) {
   beforeEach(function(done) {
     TestModel.purge(done);
+  });
+
+  it("doesn't let the same plugin register twice", function(done) {
+    var mdlBefore = TestModel._mdl;
+    rhom.model(TestModel).should.be.exactly(mdlBefore);
+
+    try {
+      rhom.redis.store(TestModel, client);
+    } catch (e) {
+      return done();
+    }
+    done("Error never happened")
+  });
+
+  it("overrides only when asked", function() {
+    function TmpModel() {};
+    TmpModel.get = "keepme";
+    TmpModel.prototype.save = "keepmetoo";
+    rhom(TmpModel);
+
+    TmpModel.get.should.be.exactly("keepme");
+    TmpModel.prototype.save.should.be.exactly("keepmetoo");
+
+    function TmpModel2() {};
+    TmpModel2.get = "throw";
+    TmpModel2.prototype.save = "throwalso";
+    rhom(TmpModel2, [], client, { override: true });
+
+    (typeof TmpModel2.get).should.be.exactly("function");
+    (typeof TmpModel2.prototype.save).should.be.exactly("function");
   });
 
   it("has expected static methods", function() {
