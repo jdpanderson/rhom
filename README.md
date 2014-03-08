@@ -3,6 +3,8 @@ Redis Hash to Object Mapper
 
 This is a mixin that maps Redis hashes into user-defined objects and vice versa. Its intention is to provide a simple way to perform CRUD on Redis hashes with minimal interference; Redis is great, so details shouldn't be abstracted away to the point that direct client access is hacky.
 
+TL;DR: RHOM tries to save stuff in Redis the same way you might.
+
 Example
 --------
 
@@ -13,7 +15,7 @@ var rhom = require('rhom');
 var client = require('redis').createClient();
 
 function MyUserModel() {} // Define however you want.
-rhom(MyUserModel, ['id', 'name', 'email'], client);
+rhom(MyUserModel, ['id', 'name', 'email'], client); // Mix-in RHOM functionality
 
 /* Create */
 var user1 = new MyUserModel();
@@ -54,8 +56,13 @@ Caching can be applied on top of base mapper functionality by applying the rhom.
 
 ```javascript
 function MyUserModel() {}
-rhom(MyUserModel, [/* properties */], client);
-rhom.cache(MyUserModel, 30); /* Cache for 30 seconds. */
+
+/* Method 1: Cache for 30 seconds */
+rhom(MyUserModel, [/* properties */], client).cache(30000);
+
+/* Method 2: Cache for 30 seconds */
+//rhom(MyUserModel, [/* properties */], client);
+//rhom.cache(MyUserModel, 30000);
 ```
 
 Relationships
@@ -68,13 +75,21 @@ function User() {};
 function Group() {};
 function Permission() {};
 
-rhom(User, ['username'], client);
-rhom(Group, ['name'], client);
+/* Method 1: Relations with method chaining. */
+var rhomUser = rhom(User, ['username'], client);
+rhomUser.relates.toOne(Group);
+rhomUser.relates.via(Group).toMany(Permission);
+rhom(Group, ['name'], client).relates.toMany(Permission);
 rhom(Permission, ['label'], client);
 
-rhom.relates(User).toOne(Group); // 1 to 1. Getter is get<Classname>
-rhom.relates(Group).toMany(Permission); // 1 to N. Getter is pluralized get<Classnames>.
-rhom.relates(User).via(Group).toMany(Permission); // Indirect
+/* Method 2: Relations */
+//rhom(User, ['username'], client);
+//rhom(Group, ['name'], client);
+//rhom(Permission, ['label'], client);
+
+//rhom.relates(User).toOne(Group); // 1 to 1. Getter is get<Classname>
+//rhom.relates(Group).toMany(Permission); // 1 to N. Getter is pluralized get<Classnames>.
+//rhom.relates(User).via(Group).toMany(Permission); // Indirect
 
 var user1 = /* retrieved instance of User */;
 user1.getGroup(function(err, group) {
@@ -108,6 +123,7 @@ User.getPermission(); // Singular would not be defined; toMany is pluralized.
 Notes:
  * Relationships will let you shoot yourself in the foot. If you don't define a relationship and try to call it (e.g. intermediaries), it will blow up.
  * Indirect relationships don't populate writer functions. This is partially because setting an indirect relation would also implicitly set a direct relationship on two other classes that may not have intended it. To give an example based on the sample code above, if user.addPermission() existed you would logically think it would add a permission for that user. It would, but it would also add it for the user's entire group - which isn't obvious. user.getGroup().addPermission() is much clearer.
+ * Relations are not automatically cleaned up. If you delete a related object, the other end may still think it is related. Functionally, this makes no difference; The result will still be that the relation no longer exists. The relation key is cleaned up when detected by the relation getter. (E.g. user.getRole() where the role has been deleted will return nothing, and internally deletes the relation's internal tracking key.)
 
 
 Indexing
@@ -117,9 +133,16 @@ Adds an equality index so that fields can be searched quickly.
 
 ```javascript
 function User() {};
-rhom(User, ['username', 'password', 'name', 'email'], client);
-rhom.index(User, "username", client); // Creates User.getByUsername();
-rhom.index(User, "email", client); // Creates User.getByEmail();
+
+/* Method 1: Method chaining */
+rhom(User, ['username', 'password', 'name', 'email'], client)
+	.index("username") // Defines User.getByUsername()
+	.index("email"); // Defines User.getByEmail()
+
+/* Method 2 */
+//rhom(User, ['username', 'password', 'name', 'email'], client);
+//rhom.index(User, "username", client); // Defines User.getByUsername();
+//rhom.index(User, "email", client); // Defines User.getByEmail();
 
 User.getByUsername('jsmith', function(err, users) {
 	if (err) return;
@@ -131,7 +154,7 @@ User.getByUsername('jsmith', function(err, users) {
 Promises
 ========
 
-All the getters on the base object should return promises. Not currently recommended, as some of the periphery modules don't use them yet.
+All the getters on the base object should return promises.
 
 ```javascript
 Cls.get('foo').then(function(obj) {
@@ -163,11 +186,10 @@ MyClass.prototype = { /* ... */ }
 Cleanup
 -------
 
-Currently, some things don't clean up after themselves and may leave you with a dirty Redis database (relations for one).  I'm working on that, but this is a very early stage project.
+Currently, some things don't clean up after themselves and may leave you with a dirty Redis database. Relations and indexes come to mind. If you delete the target, the keys that reference the deleted item may remain until the missing item is detected by a getter.
 
 Possible Additions 
 ==================
 
 Some things I've thought about adding:
  * Local storage with event or pubsub based change tracking. This would be useful for multi-process node classes. (Something like keeping local copies that are automatically updated when changed in redis.)
- * Indexing, either local or using redis features.
