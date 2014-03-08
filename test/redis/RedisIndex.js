@@ -6,8 +6,8 @@ var crypto = require('crypto');
 
 function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
-rhom(TestModel, TestModel.properties, client);
-rhom.index(TestModel, "foo", client);
+rhom(TestModel, TestModel.properties, client)
+  .index("foo");
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.

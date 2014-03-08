@@ -18,19 +18,19 @@ function Setting() {};
 function Default() {};
 function Permission() {};
 
-rhom(User, ['name'], client);
-rhom(Role, ['label'], client);
-rhom(Setting, ['pref'], client);
+var userModel = rhom(User, ['name'], client);
+userModel.relates.toOne(Role);
+userModel.relates.via(Role).toOne(Setting);
+userModel.relates.via(Role).via(Setting).toOne(Default);
+userModel.relates.via(Role).toMany(Permission);
+
+var roleModel = rhom(Role, ['label'], client);
+roleModel.relates.toMany(Permission);
+roleModel.relates.toOne(Setting);
+
+rhom(Setting, ['pref'], client).relates.toOne(Default);
 rhom(Default, ['dflt'], client);
 rhom(Permission, ['desc'], client);
-
-rhom.relates(User, client).toOne(Role);
-rhom.relates(Role, client).toMany(Permission);
-rhom.relates(Role, client).toOne(Setting);
-rhom.relates(User, client).via(Role).toOne(Setting);
-rhom.relates(User, client).via(Role).via(Setting).toOne(Default); // Ridiculous multi-step dependency.
-rhom.relates(User, client).via(Role).toMany(Permission);
-rhom.relates(Setting, client).toOne(Default);
 
 var user, role, setting, dflt, perm1, perm2;
 

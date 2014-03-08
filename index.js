@@ -27,10 +27,7 @@ module.exports = function(cls, properties, client, options) {
 			RedisIndex(cls, field);
 			return this;
 		},
-		relates: function() {
-			RedisRelation(cls);
-			return this;
-		}
+		relates: RedisRelation(cls)
 	};
 };
 module.exports.model = Model;

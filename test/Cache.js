@@ -5,13 +5,11 @@ var rhom = require('../index.js');
 
 function TestModel() {};
 TestModel.properties = ['foo', 'bar'];
-rhom(TestModel, TestModel.properties, client);
-rhom.cache(TestModel);
+rhom(TestModel, TestModel.properties, client).cache();
 
 function TestTimeout() {};
 TestTimeout.properties = ['baz'];
-rhom(TestTimeout, TestTimeout.properties, client);
-rhom.cache(TestTimeout, 10);
+rhom(TestTimeout, TestTimeout.properties, client).cache(10);
 
 /**
  * The tests here are essentially a copy of the ModelSpec cases - they verify that the cached model works more or less like the plain model.
