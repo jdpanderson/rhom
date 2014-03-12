@@ -14,9 +14,10 @@
   "dependencies": {
     "redis": ">=0.9",
     "uuid": ">=1.4",
-	"inflection": ">=1.3.2",
-	"bluebird": ">=1.0.5",
-	"async": ">=0.2.10"
+    "inflection": ">=1.3.2",
+    "bluebird": ">=1.0.5",
+    "async": ">=0.2.10",
+    "validate": "*"
   },
   "devDependencies": {
     "mocha": "*",
