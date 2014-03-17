@@ -37,6 +37,6 @@ describe("Model validation", function() {
 
     t.save(function(err, res) {
       err ? done() : done("Expected an error");
-    }).then(function(s) {}, function(e) {});
+    });
   });
 });
