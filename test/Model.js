@@ -222,6 +222,24 @@ describe("Model class", function(done) {
     });
   });
 
+  it("Handles both promises and callbacks as first-class citizens", function(done) {
+    /* Hook in a promise and make sure it does the same as the callback. */
+    function EvtTst() {};
+    rhom.model(EvtTst, ['a']);
+
+    EvtTst._mdl.on("beforeGet", function(evt) { evt.failure("Test Error"); });
+    EvtTst._mdl.on("beforeSave", function(evt) { evt.success("Test Success"); });
+    EvtTst.get("irrelevant").then(
+      function(s) { done("An error was expected, not success"); },
+      function(e) {
+        new EvtTst().save().then(
+          function(s) { done(); },
+          function(e) { done(e); }
+        );
+      }
+    );
+  });
+
   /* Regression test: add a bunch of objects and test the structure manually.  */
   it("Generates expected structure in redis", function(done) {
     var t1 = new TestModel();

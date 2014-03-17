@@ -35,11 +35,8 @@ describe("Model validation", function() {
     t.foo = "user@host.com";
     t.bar = 123;
 
-    /* For some reason, no matter what I do, the promise always emits an unhandled rejection error unless I do this. */
-    Promise.onPossiblyUnhandledRejection();
-
     t.save(function(err, res) {
       err ? done() : done("Expected an error");
-    });
+    }).then(function(s) {}, function(e) {});
   });
 });
