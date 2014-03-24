@@ -7,6 +7,10 @@ function TestModel() {}
 TestModel.properties = ['foo', 'bar'];
 rhom(TestModel, TestModel.properties, client);
 
+/* An object without defined properties just saves everything. */
+function AnonModel() {}
+rhom(AnonModel, undefined, client);
+
 describe("Model utility functions", function() {
   it("generates seqential identifiers", function() {
     var seq1 = rhom.model.sequence();
@@ -32,7 +36,9 @@ describe("Model utility functions", function() {
 
 describe("Model class", function(done) {
   beforeEach(function(done) {
-    TestModel.purge(done);
+    TestModel.purge(function(err, res) {
+      AnonModel.purge(done)
+    });
   });
 
   it("doesn't let the same plugin register twice", function(done) {
@@ -206,6 +212,26 @@ describe("Model class", function(done) {
           res.indexOf(ids[i]).should.not.eql(-1);
         }
 
+        done();
+      });
+    });
+  });
+
+  it("Can store arbitrary objects", function(done) {
+    var anon = new AnonModel();
+    anon.foo = "bar";
+    anon.blah = "blah blah";
+    anon.zippityDooDah = "zippity day!";
+
+    anon.save(function(err, res) {
+      if (err) return done(err);
+      AnonModel.get(anon.id, function(err, anonCopy) {
+        if (err) return done(err);
+
+        should(anonCopy instanceof AnonModel).be.true;
+        anonCopy.foo.should.be.exactly(anon.foo);
+        anonCopy.blah.should.be.exactly(anon.blah);
+        anonCopy.zippityDooDah.should.be.exactly(anon.zippityDooDah);
         done();
       });
     });

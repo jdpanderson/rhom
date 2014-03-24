@@ -42,7 +42,18 @@ copy1.delete(function(err, res) {
 	if (res) console.log("Deleted");
 });
 // Hash underlying user1 is also gone, because they're the same.
-``` 
+```
+
+If you don't know the properties an object will have, you can store everything enumerable on the instance. This isn't recommended in most cases, as it may silently fail to save if any enumerable property can't be saved to Redis.
+
+```javascript
+function KitchenSink() {}
+rhom(KitchenSink, undefined, client);
+
+var sink = new KitchenSink();
+sink["prop" + Math.round(Math.random()*1000)] = "Doesn't matter";
+/* Arbitrary properties like this can be saved and retrieved. */
+```
 
 Additional Mixins
 =================
