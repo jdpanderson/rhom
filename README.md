@@ -204,3 +204,13 @@ Possible Additions
 
 Some things I've thought about adding:
  * Local storage with event or pubsub based change tracking. This would be useful for multi-process node classes. (Something like keeping local copies that are automatically updated when changed in redis.)
+ * Getters that can return limit/offset if integer arguments are provided. Maybe:
+
+```javascript
+Class.all(callback); // Normal
+Class.all(100, callback); // With Limit 100
+Class.all(100, 500, callback); // With limit 100, offset 500
+Class.getRelatedItems(callback); // Normal
+Class.getRelatedItems(100, callback); // With limit 100
+Class.getRelatedItems(100, 500, callback); // With Limit 100, offset 500
+```
