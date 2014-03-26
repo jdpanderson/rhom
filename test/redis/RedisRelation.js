@@ -184,6 +184,22 @@ describe("One to many model relationships", function(done) {
     });
   });
 
+  it("Can check for relations without getting them", function(done) {
+    role.hasPermission(perm1, function(err, res) {
+      should(err).be.exactly(null);
+      res.should.be.true;
+      role.hasPermission(perm2.id, function(err, res) {
+        should(err).be.exactly(null);
+        res.should.be.true;
+        role.hasPermission(user, function(err, res) {
+          should(err).be.exactly(null);
+          res.should.be.false;
+          done();
+        });
+      });
+    });
+  });
+
   it("Removes related objects", function(done) {
     role.removePermission(perm2, function(err, res) {
       should(err).be.exactly(null);
