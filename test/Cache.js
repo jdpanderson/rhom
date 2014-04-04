@@ -21,6 +21,16 @@ describe("Cached Model class", function(done) {
     TestModel.purge(done);
   });
 
+  /* We don't want to expose the cache flag, but it should be there. */
+  it("Keeps the _cache flag private", function(done) {
+    var test = new TestModel();
+    ("_cache" in test).should.be.true;
+    for (var p in test) {
+      p.should.not.be.exactly("_cache");
+    }
+    done();
+  });
+
   it("Handles timeouts", function(done) {
     var test = new TestTimeout();
     test.baz = "blah";
