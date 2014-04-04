@@ -1,6 +1,6 @@
 {
   "name": "rhom",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Redis Hash-Object Mapper mixin",
   "author": "Jonathan Anderson <janderson@janderson.ca>",
   "homepage": "https://github.com/jdpanderson/rhom",
