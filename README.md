@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jdpanderson/rhom.svg?branch=master)](https://travis-ci.org/jdpanderson/rhom)
+[![npm version](http://img.shields.io/npm/v/rhom.svg)](https://npmjs.org/package/rhom)
 Redis Hash to Object Mapper
 ============================
 
